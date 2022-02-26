@@ -602,9 +602,14 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 		if (addr & SECTION_SIZE)
 			pmd++;
 #endif
-
+		static int i = 0;
 		do {
 			*pmd = __pmd(phys | type->prot_sect);
+
+			if (i++ < 10) {
+				printk(KERN_WARNING "*pmd = 0x%08lx", *pmd);
+			}
+
 			phys += SECTION_SIZE;
 		} while (pmd++, addr += SECTION_SIZE, addr != end);
 
@@ -738,7 +743,7 @@ static void __init create_mapping(struct map_desc *md)
 	map.virtual = __phys_to_virt(start); /* vexpress:map.pfn=0x80000000 */
 	map.length = end - start; /* vexpress:map.length 0x20000000 */
 	#endif
-	
+
 	addr = md->virtual & PAGE_MASK;
 	phys = __pfn_to_phys(md->pfn);
 	length = PAGE_ALIGN(md->length + (md->virtual & ~PAGE_MASK));
@@ -755,7 +760,7 @@ static void __init create_mapping(struct map_desc *md)
 
 	pgd = pgd_offset_k(addr);
 	end = addr + length;
-	printk(KERN_WARNING "pgd_offset_k 0x%08lx = 0x%08x to end 0x%08lx.\n",
+	printk(KERN_WARNING "pgd_offset_k 0x%08lx = 0x%08lx to end 0x%08lx.\n",
 			    addr,
 			    pgd_offset_k(addr),
 			    end);
@@ -764,15 +769,22 @@ static void __init create_mapping(struct map_desc *md)
 			    init_mm.pgd,
 			    addr,
 			    pgd_index(addr));
+	unsigned int i = 0;
 	do {
 		unsigned long next = pgd_addr_end(addr, end);
-		/* printk(KERN_WARNING "pgd[0x%08lx] phys = 0x%08x next = 0x%08lx\n",
-				    pgd,
-				    phys, 
-				    next);*/
+
+		if (i < 5) {
+			printk(KERN_WARNING "pgd = 0x%08lx addr = 0x%08lx next = 0x%08lx "
+					    "phys = 0x%08lx\n",
+					    pgd,
+					    addr,
+					    next,
+					    phys);
+		}
 
 		alloc_init_pud(pgd, addr, next, phys, type);
 
+		i++;
 		phys += next - addr;
 		addr = next;
 	} while (pgd++, addr != end);
