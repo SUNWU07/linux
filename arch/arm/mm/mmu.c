@@ -733,10 +733,18 @@ static void __init create_mapping(struct map_desc *md)
 		return;
 	}
 #endif
-
+	#if 0
+	map.pfn = __phys_to_pfn(start); /* vexpress:map.pfn=0x60000 */
+	map.virtual = __phys_to_virt(start); /* vexpress:map.pfn=0x80000000 */
+	map.length = end - start; /* vexpress:map.length 0x20000000 */
+	#endif
+	
 	addr = md->virtual & PAGE_MASK;
 	phys = __pfn_to_phys(md->pfn);
 	length = PAGE_ALIGN(md->length + (md->virtual & ~PAGE_MASK));
+
+	printk(KERN_WARNING "map for 0x%08llx at 0x%08lx length 0x%08lx.\n",
+		       (long long)__pfn_to_phys(md->pfn), addr, length);
 
 	if (type->prot_l1 == 0 && ((addr | phys | length) & ~SECTION_MASK)) {
 		printk(KERN_WARNING "BUG: map for 0x%08llx at 0x%08lx can not "
@@ -747,8 +755,21 @@ static void __init create_mapping(struct map_desc *md)
 
 	pgd = pgd_offset_k(addr);
 	end = addr + length;
+	printk(KERN_WARNING "pgd_offset_k 0x%08lx = 0x%08x to end 0x%08lx.\n",
+			    addr,
+			    pgd_offset_k(addr),
+			    end);
+
+	printk(KERN_WARNING "init_mm.pgd 0x%08lx pgd_index(0x%08lx) = 0x%08lx.\n",
+			    init_mm.pgd,
+			    addr,
+			    pgd_index(addr));
 	do {
 		unsigned long next = pgd_addr_end(addr, end);
+		/* printk(KERN_WARNING "pgd[0x%08lx] phys = 0x%08x next = 0x%08lx\n",
+				    pgd,
+				    phys, 
+				    next);*/
 
 		alloc_init_pud(pgd, addr, next, phys, type);
 
@@ -896,8 +917,10 @@ void __init sanity_check_meminfo(void)
 			bank->size = newsize;
 		}
 #endif
-		if (!bank->highmem && bank->start + bank->size > lowmem_limit)
+		if (!bank->highmem && bank->start + bank->size > lowmem_limit) {
 			lowmem_limit = bank->start + bank->size;
+			printk(KERN_CRIT "lowmem_limit %#016llx\n", (unsigned long long)lowmem_limit);
+		}
 
 		j++;
 	}
@@ -934,6 +957,10 @@ static inline void prepare_page_table(void)
 	/*
 	 * Clear out all the mappings below the kernel image.
 	 */
+	printk(KERN_INFO "prepare_page_table: [%#016llx-%#016llx]\n",
+	       (unsigned long long)0,
+	       (unsigned long long)MODULES_VADDR);
+
 	for (addr = 0; addr < MODULES_VADDR; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
 
@@ -941,6 +968,10 @@ static inline void prepare_page_table(void)
 	/* The XIP kernel is mapped in the module area -- skip over it */
 	addr = ((unsigned long)_etext + PMD_SIZE - 1) & PMD_MASK;
 #endif
+	printk(KERN_INFO "prepare_page_table: [%#016llx-%#016llx]\n",
+	       (unsigned long long)addr,
+	       (unsigned long long)PAGE_OFFSET);
+
 	for ( ; addr < PAGE_OFFSET; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
 
@@ -955,6 +986,10 @@ static inline void prepare_page_table(void)
 	 * Clear out all the kernel space mappings, except for the first
 	 * memory bank, up to the vmalloc region.
 	 */
+	printk(KERN_INFO "prepare_page_table: [%#016llx-%#016llx]\n",
+	       (unsigned long long)__phys_to_virt(end),
+	       (unsigned long long)VMALLOC_START);
+
 	for (addr = __phys_to_virt(end);
 	     addr < VMALLOC_START; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
@@ -1087,6 +1122,7 @@ static void __init map_lowmem(void)
 	struct memblock_region *reg;
 
 	/* Map all the lowmem memory banks. */
+	/* memblock_add: [0x00000060000000-0x00000020000000] */
 	for_each_memblock(memory, reg) {
 		phys_addr_t start = reg->base;
 		phys_addr_t end = start + reg->size;
@@ -1097,10 +1133,19 @@ static void __init map_lowmem(void)
 		if (start >= end)
 			break;
 
-		map.pfn = __phys_to_pfn(start);
-		map.virtual = __phys_to_virt(start);
-		map.length = end - start;
+		printk(KERN_INFO "PHYS_OFFSET:%#016llx PAGE_OFFSET:%#016llx\n",
+			       (unsigned long long)PHYS_OFFSET,
+			       (unsigned long long)PAGE_OFFSET);
+
+		map.pfn = __phys_to_pfn(start); /* vexpress:map.pfn=0x60000 */
+		map.virtual = __phys_to_virt(start); /* vexpress:map.pfn=0x80000000 */
+		map.length = end - start; /* vexpress:map.length 0x20000000  */
 		map.type = MT_MEMORY;
+		printk(KERN_INFO "map.pfn:%#08lx map.virtual:%#08lx "
+				 "map.length:%#08lx\n",
+				  map.pfn,
+				  map.virtual,
+				  map.length);
 
 		create_mapping(&map);
 	}

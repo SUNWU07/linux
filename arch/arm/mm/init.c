@@ -326,14 +326,22 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 {
 	int i;
 
-	for (i = 0; i < mi->nr_banks; i++)
+	for (i = 0; i < mi->nr_banks; i++) {
 		memblock_add(mi->bank[i].start, mi->bank[i].size);
+		memblock_dbg("memblock_add: [%#016llx-%#016llx]\n",
+			     (unsigned long long)mi->bank[i].start,
+			     (unsigned long long)mi->bank[i].size);
+	}
 
 	/* Register the kernel text, kernel data and initrd with memblock. */
 #ifdef CONFIG_XIP_KERNEL
 	memblock_reserve(__pa(_sdata), _end - _sdata);
 #else
 	memblock_reserve(__pa(_stext), _end - _stext);
+	memblock_dbg("memblock_reserve: [_stext:%#016llx-_end:%#016llx]\n",
+		     (unsigned long long)_stext,
+		     (unsigned long long)_end);
+
 #endif
 #ifdef CONFIG_BLK_DEV_INITRD
 	if (phys_initrd_size &&
