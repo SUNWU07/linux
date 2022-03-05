@@ -105,7 +105,16 @@ phys_addr_t __init_memblock memblock_find_in_range_node(phys_addr_t start,
 
 	/* avoid allocating the first page */
 	start = max_t(phys_addr_t, start, PAGE_SIZE);
+
 	end = max(start, end);
+	memblock_dbg("alloc size 0x%llx @0x%llx.\n",
+		     (unsigned long long) start, (unsigned long long) end);
+
+
+	/* for (i = (u64)ULLONG_MAX,					\
+		     __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid); \
+		     i != (u64)ULLONG_MAX;					\
+		     __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid)) */
 
 	for_each_free_mem_range_reverse(i, nid, &this_start, &this_end, NULL) {
 		this_start = clamp(this_start, start, end);
@@ -763,6 +772,9 @@ phys_addr_t __init memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys
 		panic("ERROR: Failed to allocate 0x%llx bytes below 0x%llx.\n",
 		      (unsigned long long) size, (unsigned long long) max_addr);
 
+	memblock_dbg("alloc size 0x%llx @0x%llx, max_addr 0x%llx.\n",
+			 (unsigned long long) size, (unsigned long long) alloc,
+			 (unsigned long long) max_addr);
 	return alloc;
 }
 

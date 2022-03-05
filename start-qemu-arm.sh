@@ -1,0 +1,2 @@
+sudo qemu-system-arm -M vexpress-a9 -m 512M -kernel zImage -nographic -nographic  -append "root=/dev/mmcblk0 console=ttyAMA0" -sd a9rootfs.ext3 -net nic -net tap,ifname=tap0
+sudo qemu-system-arm -M vexpress-a9 -m 512M -kernel linux/out_v3.4-rc7/arch/arm/boot/zImage -nographic -nographic  -append root=/dev/mmcblk0 memblock=debug debug bootmem_debug loglevel=7 mminit_loglevel=7 console=ttyAMA0 -sd a9rootfs.ext3 -net nic -net tap,ifname=tap0

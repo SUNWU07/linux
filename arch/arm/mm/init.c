@@ -480,6 +480,7 @@ static void __init free_unused_memmap(struct meminfo *mi)
 {
 	unsigned long bank_start, prev_bank_end = 0;
 	unsigned int i;
+	printk(KERN_INFO "free_unused_memmap\n");
 
 	/*
 	 * This relies on each bank being in address order.
@@ -489,6 +490,7 @@ static void __init free_unused_memmap(struct meminfo *mi)
 		struct membank *bank = &mi->bank[i];
 
 		bank_start = bank_pfn_start(bank);
+		printk(KERN_INFO  "bank_star1=0x%08lx\n", bank_start);
 
 #ifdef CONFIG_SPARSEMEM
 		/*
@@ -504,11 +506,14 @@ static void __init free_unused_memmap(struct meminfo *mi)
 		 * MAX_ORDER_NR_PAGES.
 		 */
 		bank_start = round_down(bank_start, MAX_ORDER_NR_PAGES);
+
 #endif
+		printk(KERN_INFO "bank_start2=0x%08lx\n", bank_start);
 		/*
 		 * If we had a previous bank, and there is a space
 		 * between the current bank and the previous, free it.
 		 */
+		printk(KERN_INFO "prev_bank_end1=0x%08lx\n", prev_bank_end);
 		if (prev_bank_end && prev_bank_end < bank_start)
 			free_memmap(prev_bank_end, bank_start);
 
@@ -517,7 +522,9 @@ static void __init free_unused_memmap(struct meminfo *mi)
 		 * memmap entries are valid from the bank end aligned to
 		 * MAX_ORDER_NR_PAGES.
 		 */
+		printk(KERN_INFO "prev_bank_end2=0x%08lx\n", prev_bank_end);
 		prev_bank_end = ALIGN(bank_pfn_end(bank), MAX_ORDER_NR_PAGES);
+		printk(KERN_INFO "prev_bank_end3=0x%08lx\n", prev_bank_end);
 	}
 
 #ifdef CONFIG_SPARSEMEM
@@ -593,9 +600,10 @@ void __init mem_init(void)
 	extern u32 itcm_end;
 #endif
 
-	max_mapnr   = pfn_to_page(max_pfn + PHYS_PFN_OFFSET) - mem_map;
+	max_mapnr = pfn_to_page(max_pfn + PHYS_PFN_OFFSET) - mem_map;
 
 	/* this will put all unused low memory onto the freelists */
+	printk(KERN_INFO "free_unused_memmap\n");
 	free_unused_memmap(&meminfo);
 
 	totalram_pages += free_all_bootmem();

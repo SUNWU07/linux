@@ -2861,7 +2861,7 @@ static int build_zonelists_node(pg_data_t *pgdat, struct zonelist *zonelist,
 				int nr_zones, enum zone_type zone_type)
 {
 	struct zone *zone;
-
+	/* nr_zones = 0 zone_type = 1 */
 	BUG_ON(zone_type >= MAX_NR_ZONES);
 	zone_type++;
 
@@ -2875,6 +2875,7 @@ static int build_zonelists_node(pg_data_t *pgdat, struct zonelist *zonelist,
 		}
 
 	} while (zone_type);
+	/* return 2 */
 	return nr_zones;
 }
 
@@ -3292,7 +3293,11 @@ static void build_zonelists(pg_data_t *pgdat)
 	local_node = pgdat->node_id;
 
 	zonelist = &pgdat->node_zonelists[0];
+	/* MAX_NR_ZONES = 2*/
 	j = build_zonelists_node(pgdat, zonelist, 0, MAX_NR_ZONES - 1);
+
+	printk(KERN_WARNING "build_zonelists j = %d local_node %d, MAX_NR_ZONES %d\n",
+			j, local_node, MAX_NR_ZONES);
 
 	/*
 	 * Now we build the zonelist so that it contains the zones

@@ -559,6 +559,7 @@ static void __init *early_alloc_aligned(unsigned long sz, unsigned long align)
 
 static void __init *early_alloc(unsigned long sz)
 {
+	printk("early_alloc 0x%08lx\n",sz);
 	return early_alloc_aligned(sz, sz);
 }
 
@@ -1044,6 +1045,8 @@ void __init arm_mm_memblock_reserve(void)
  */
 static void __init devicemaps_init(struct machine_desc *mdesc)
 {
+	/* 为中断向量分配内存，为中断向量虚拟地址映射的页表分配内存，建立虚拟地址到物理地址的映射
+	   申请的内存物理内存地址为  alloc size 0x1000 @0x7fffe000，随后建立 */
 	struct map_desc map;
 	unsigned long addr;
 	void *vectors;
